@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kartu Mahasiswa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── RESET & BASE ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #070710;
+      --surface:     #0e0e1c;
+      --surface2:    #14142a;
+      --border:      rgba(255,255,255,0.07);
+      --accent:      #4f8ef7;
+      --accent2:     #00e5b0;
+      --gold:        #f0c040;
+      --danger:      #ff5f7e;
+      --text:        #dde0f0;
+      --muted:       #555880;
+      --card-w:      380px;
+      --card-h:      240px;
+      --radius:      16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* noise overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* grid lines */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── LAYOUT ──────────────────────────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+
+    /* ─── HEADER ──────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 64px;
+      animation: fadeDown .7s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(79,142,247,.12);
+      border: 1px solid rgba(79,142,247,.25);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s infinite; display: inline-block; }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(32px, 5.5vw, 68px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      background: linear-gradient(120deg, #fff 20%, var(--accent) 55%, var(--accent2) 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .5px;
+    }
+
+    /* ─── MAIN GRID ───────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── PANEL ───────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      animation: fadeUp .7s ease both;
+    }
+
+    .panel:nth-child(2) { animation-delay: .1s; }
+
+    .panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 18px; height: 2px;
+      background: var(--accent);
+    }
+
+    /* ─── FORM ────────────────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      appearance: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(79,142,247,.5);
+      box-shadow: 0 0 0 3px rgba(79,142,247,.1);
+    }
+
+    textarea { resize: vertical; min-height: 70px; }
+
+    select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23555880' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* photo upload */
+    .photo-upload {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      text-align: center;
+      padding: 20px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+
+    .photo-upload:hover { border-color: rgba(79,142,247,.4); background: rgba(79,142,247,.04); }
+
+    .photo-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    .photo-icon { font-size: 28px; margin-bottom: 6px; }
+    .photo-label { font-size: 11px; color: var(--muted); }
+
+    #photo-preview-wrap { display: none; margin-top: 12px; }
+    #photo-preview-wrap img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 2px solid var(--border); }
+
+    /* theme selector */
+    .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+    .theme-btn {
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform .15s, border-color .15s;
+      position: relative;
+    }
+
+    .theme-btn:hover { transform: scale(1.06); }
+    .theme-btn.active { border-color: #fff; }
+
+    .theme-btn[data-theme="navy"]   { background: linear-gradient(135deg, #0a1628, #1a3a6e); }
+    .theme-btn[data-theme="carbon"] { background: linear-gradient(135deg, #111, #2a2a2a); }
+    .theme-btn[data-theme="forest"] { background: linear-gradient(135deg, #0a2010, #1a5530); }
+    .theme-btn[data-theme="rose"]   { background: linear-gradient(135deg, #2a0a14, #6e1a2e); }
+    .theme-btn[data-theme="aurora"] { background: linear-gradient(135deg, #0a0a28, #281450); }
+    .theme-btn[data-theme="slate"]  { background: linear-gradient(135deg, #1a1a28, #2a3050); }
+    .theme-btn[data-theme="copper"] { background: linear-gradient(135deg, #1e0e06, #5a2a14); }
+    .theme-btn[data-theme="ice"]    { background: linear-gradient(135deg, #061428, #0a2848); }
+
+    /* action buttons */
+    .btn-row { display: flex; gap: 12px; margin-top: 28px; }
+
+    .btn {
+      flex: 1;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+    }
+
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #7b6cf8);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(79,142,247,.35);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, var(--accent2), #00a880);
+      color: #05120f;
+      box-shadow: 0 4px 20px rgba(0,229,176,.25);
+    }
+
+    /* ─── PREVIEW PANEL ───────────────────────────────────────── */
+    .preview-panel {
+      position: sticky;
+      top: 32px;
+    }
+
+    /* ─── CARD ────────────────────────────────────────────────── */
+    .card-stage {
+      perspective: 900px;
+      margin-bottom: 24px;
+    }
+
+    .card-wrapper {
+      width: var(--card-w);
+      height: var(--card-h);
+      margin: 0 auto;
+      transform-style: preserve-3d;
+      transition: transform .6s cubic-bezier(.4,0,.2,1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .card-wrapper.flipped { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute; inset: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    .card-back { transform: rotateY(180deg); }
+
+    /* card themes */
+    .card-face.navy   { background: linear-gradient(135deg, #0a1628 0%, #0e2050 60%, #1a3a7e 100%); }
+    .card-face.carbon { background: linear-gradient(135deg, #111 0%, #1c1c1c 60%, #2a2a2a 100%); }
+    .card-face.forest { background: linear-gradient(135deg, #0a2010 0%, #0f3020 60%, #1a5030 100%); }
+    .card-face.rose   { background: linear-gradient(135deg, #2a0a14 0%, #3e1020 60%, #601030 100%); }
+    .card-face.aurora { background: linear-gradient(135deg, #0a0a28 0%, #180a38 60%, #281450 100%); }
+    .card-face.slate  { background: linear-gradient(135deg, #1a1a28 0%, #1e2238 60%, #252c50 100%); }
+    .card-face.copper { background: linear-gradient(135deg, #1e0e06 0%, #38180c 60%, #5a2814 100%); }
+    .card-face.ice    { background: linear-gradient(135deg, #061428 0%, #081e3c 60%, #0c2a54 100%); }
+
+    /* card decorative elements */
+    .card-face::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+    }
+
+    .card-face::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -40px;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.03);
+    }
+
+    /* holographic shimmer */
+    .holo {
+      position: absolute; inset: 0;
+      border-radius: var(--radius);
+      background: linear-gradient(105deg,
+        transparent 20%,
+        rgba(255,255,255,.04) 30%,
+        rgba(255,255,255,.08) 40%,
+        transparent 50%
+      );
+      background-size: 200% 200%;
+      animation: shimmer 4s ease infinite;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* card content layout */
+    .card-inner {
+      position: relative;
+      z-index: 5;
+      height: 100%;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* top row */
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .card-org-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 3px;
+    }
+    .card-type {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .5px;
+    }
+
+    /* logo area */
+    .card-logo {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    /* middle - photo + name */
+    .card-mid {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .card-photo-wrap {
+      flex-shrink: 0;
+      width: 58px; height: 58px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,.2);
+      overflow: hidden;
+      background: rgba(255,255,255,.07);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .card-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .card-photo-placeholder { font-size: 24px; color: rgba(255,255,255,.3); }
+
+
+    .card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+    .card-position {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.5);
+    }
+
+    /* bottom row */
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .card-info-grid { display: flex; flex-direction: column; gap: 3px; }
+    .card-info-item { display: flex; align-items: center; gap: 6px; }
+    .card-info-label { font-size: 7px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.35); width: 24px; }
+    .card-info-value { font-size: 10px; color: rgba(255,255,255,.8); }
+
+    /* id number chip */
+    .card-id-chip {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 6px;
+      padding: 5px 9px;
+      text-align: right;
+    }
+    .card-id-label { font-size: 7px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 2px; }
+    .card-id-number { font-size: 10px; color: rgba(255,255,255,.9); letter-spacing: 1px; }
+
+    /* accent line */
+    .card-accent-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+    }
+
+    /* QR chip on back */
+    .card-back-inner {
+      position: relative;
+      z-index: 5;
+      height: 100%;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-back-stripe {
+      height: 36px;
+      background: rgba(0,0,0,.5);
+      border-radius: 6px;
+      margin: 0 -20px;
+      padding: 0 20px;
+    }
+
+    .card-back-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex: 1;
+    }
+
+    .card-back-row { margin-bottom: 8px; }
+    .card-back-key { font-size: 7px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 2px; }
+    .card-back-val { font-size: 11px; color: rgba(255,255,255,.85); }
+
+    .qr-wrap {
+      width: 72px; height: 72px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 5px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    #qr-canvas { width: 62px; height: 62px; }
+
+    .card-back-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .validity-bar {
+      height: 4px;
+      background: rgba(255,255,255,.08);
+      border-radius: 100px;
+      flex: 1;
+      margin-right: 12px;
+      overflow: hidden;
+    }
+
+    .validity-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width .5s ease;
+    }
+
+    .validity-label { font-size: 8px; letter-spacing: 1px; color: rgba(255,255,255,.4); white-space: nowrap; }
+
+    /* flip hint */
+    .flip-hint {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .flip-hint svg { animation: spin 3s linear infinite; }
+
+    /* download row */
+    .download-row { display: flex; gap: 10px; }
+    .download-row .btn { font-size: 11px; }
+
+    /* ─── STATS ───────────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 40px;
+      animation: fadeUp .8s ease .3s both;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+    /* ─── ANIMATIONS ──────────────────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.7); }
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 50%; }
+      100% { background-position: -200% 50%; }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* toast */
+    .toast {
+      position: fixed;
+      bottom: 32px; right: 32px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 12px;
+      letter-spacing: .5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.6);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+      z-index: 999;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon { font-size: 18px; }
+
+    /* responsive card */
+    @media (max-width: 480px) {
+      :root { --card-w: 320px; --card-h: 200px; }
+      .card-name { font-size: 14px; max-width: 180px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <div class="eyebrow"><span></span> Student Identity System</div>
+    <h1>Kartu<br>Mahasiswa</h1>
+  </header>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+
+    <!-- LEFT: FORM -->
+    <div class="panel">
+      <div class="panel-title">Informasi Kartu</div>
+
+      <!-- PHOTO -->
+      <div class="form-group">
+        <label>Foto Profil</label>
+        <div class="photo-upload" id="photo-upload-area">
+          <input type="file" id="photo-input" accept="image/*" />
+          <div class="photo-icon">📷</div>
+          <div class="photo-label">Klik untuk upload foto</div>
+          <div id="photo-preview-wrap">
+            <img id="photo-preview" src="" alt="preview" />
+          </div>
+        </div>
+      </div>
+
+      <!-- NAME -->
+      <div class="form-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="f-name" placeholder="Nama Lengkap" maxlength="35" />
+    </div>
+
+      <!-- UNIVERSITAS -->
+      <div class="form-group">
+        <label>Nama Universitas</label>
+        <input type="text" id="f-university" placeholder="Nama Universitas" maxlength="40" />
+      </div>
+
+      <!-- PRODI / FAKULTAS -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Program Studi</label>
+          <input type="text" id="f-position" placeholder="Program Studi" maxlength="28" />
+        </div>
+        <div class="form-group">
+          <label>Fakultas</label>
+          <input type="text" id="f-dept" placeholder="Fakultas" maxlength="24" />
+        </div>
+      </div>
+
+      <!-- NIM -->
+      <div class="form-group">
+        <label>NIM</label>
+        <input type="text" id="f-id" placeholder="Nomor Induk Mahasiswa" maxlength="20" />
+      </div>
+
+      <!-- VALID DATE -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Berlaku Mulai</label>
+          <input type="date" id="f-from" />
+        </div>
+        <div class="form-group">
+          <label>Berlaku Hingga</label>
+          <input type="date" id="f-to" />
+        </div>
+      </div>
+
+      <!-- THEME -->
+      <div class="form-group">
+        <label>Tema Warna</label>
+        <div class="theme-grid" id="theme-grid">
+          <button class="theme-btn active" data-theme="navy"   title="Navy"></button>
+          <button class="theme-btn"        data-theme="carbon" title="Carbon"></button>
+          <button class="theme-btn"        data-theme="forest" title="Forest"></button>
+          <button class="theme-btn"        data-theme="rose"   title="Rose"></button>
+          <button class="theme-btn"        data-theme="aurora" title="Aurora"></button>
+          <button class="theme-btn"        data-theme="slate"  title="Slate"></button>
+          <button class="theme-btn"        data-theme="copper" title="Copper"></button>
+          <button class="theme-btn"        data-theme="ice"    title="Ice"></button>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-reset">↺ Reset</button>
+        <button class="btn btn-primary"   id="btn-generate">⚡ Generate</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: PREVIEW -->
+    <div class="panel preview-panel">
+      <div class="panel-title">Preview Kartu</div>
+
+      <div class="card-stage">
+        <div class="card-wrapper" id="card-wrapper">
+
+          <!-- FRONT FACE -->
+          <div class="card-face navy" id="card-front">
+            <div class="holo"></div>
+            <div class="card-inner">
+              <div class="card-top">
+                <div class="card-org-block">
+                <div class="card-type">KARTU MAHASISWA</div>
+                <div class="card-org-name" id="c-university">
+                    UNIVERSITAS
+                </div>
+            </div>
+
+
+              </div>
+
+              <div class="card-mid">
+                <div class="card-photo-wrap" id="c-photo-wrap">
+                  <span class="card-photo-placeholder">👤</span>
+                </div>
+                <div class="card-name-block">
+                  <div class="card-name"     id="c-name">NAMA LENGKAP</div>
+                  <div class="card-position" id="c-position">PROGRAM STUDI • FAKULTAS</div>
+                </div>
+              </div>
+
+              <div class="card-bottom">
+                <div class="card-info-grid">
+                  <div class="card-info-item">
+                    <span class="card-info-label">NIM</span>
+                    <span class="card-info-value" id="c-id">—</span>
+                  </div>
+                  
+
+                <div class="card-info-item">
+                    <span class="card-info-label">exp</span>
+
+                    <span class="card-info-value">
+                    <span id="c-from">—</span>
+                    s/d
+                    <span id="c-exp">—</span>
+                </span>
+                </div>
+
+                </div>
+              </div>
+            </div>
+            <div class="card-accent-bar"></div>
+          </div>
+
+          <!-- BACK FACE -->
+          <div class="card-face navy card-back" id="card-back">
+            <div class="holo"></div>
+            <div class="card-back-inner">
+              <div class="card-back-stripe"></div>
+
+              <div class="card-back-body">
+                <div class="card-back-info">
+                  <div class="card-back-row">
+                    <div class="card-back-key">Pemegang Kartu</div>
+                    <div class="card-back-val" id="cb-name">—</div>
+                  </div>
+
+                <div class="card-back-row">
+                    <div class="card-back-key">Program Studi</div>
+                    <div class="card-back-val" id="cb-org">—</div>
+                </div>
+
+                <div class="card-back-row">
+                    <div class="card-back-key">Universitas</div>
+                    <div class="card-back-val" id="cb-university">—</div>
+                </div>
+
+                  <div class="card-back-row">
+                    <div class="card-back-key">NIM</div>
+                    <div class="card-back-val" id="cb-nik">—</div>
+                  </div>
+                  <div class="card-back-row">
+                    <div class="card-back-key">Berlaku</div>
+                    <div class="card-back-val" id="cb-valid">—</div>
+                  </div>
+                </div>
+
+                <div class="qr-wrap">
+                  <canvas id="qr-canvas" width="62" height="62"></canvas>
+                </div>
+              </div>
+
+              <div class="card-back-footer">
+                <div class="validity-bar">
+                  <div class="validity-fill" id="validity-fill" style="width:80%"></div>
+                </div>
+                <div class="validity-label" id="validity-label">—</div>
+              </div>
+            </div>
+            <div class="card-accent-bar"></div>
+          </div>
+
+        </div><!-- /card-wrapper -->
+      </div><!-- /card-stage -->
+
+      <!-- FLIP HINT -->
+      <div class="flip-hint">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 4v6h6M23 20v-6h-6"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+        Klik kartu untuk melihat bagian belakang
+      </div>
+
+      <!-- DOWNLOAD -->
+      <div class="download-row">
+        <button class="btn btn-download" id="btn-dl-front">⬇ Unduh Depan</button>
+        <button class="btn btn-download" id="btn-dl-back">⬇ Unduh Belakang</button>
+      </div>
+    </div><!-- /preview panel -->
+
+  </div><!-- /grid -->
+
+
+
+</div><!-- /page -->
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✅</span>
+  <span id="toast-msg">Kartu berhasil di-generate!</span>
+</div>
+
+<!-- html2canvas CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- QR code CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- App logic -->
+<script src="app.js"></script>
+</body>
+</html>
